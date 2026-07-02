@@ -11,7 +11,6 @@
       else if(id === 'battleship') this.startBattleship();
     },
 
-    // Utility functions
     qs(sel) { return document.querySelector(sel) },
     qsa(sel) { return Array.from(document.querySelectorAll(sel)) },
 
@@ -514,6 +513,12 @@
       btnNew.textContent = 'Новая игра';
       controls.appendChild(btnNew);
 
+      const infoDiv = document.createElement('div');
+      infoDiv.style.fontSize = '12px';
+      infoDiv.style.color = '#666';
+      infoDiv.textContent = 'Кликните на фигуру, потом на целевую клетку для хода';
+      controls.appendChild(infoDiv);
+
       const resultDiv = document.createElement('div');
       resultDiv.style.textAlign = 'center';
       resultDiv.style.marginBottom = '15px';
@@ -528,7 +533,7 @@
       board.style.gap = '1px';
       board.style.background = '#999';
       board.style.padding = '5px';
-      board.style.margin = '0 auto';
+      board.style.margin = '10px auto';
       board.style.borderRadius = '5px';
       body.appendChild(board);
 
@@ -546,9 +551,9 @@
             ['♙','♙','♙','♙','♙','♙','♙','♙'],
             ['♖','♘','♗','♕','♔','♗','♘','♖']
           ],
-          selectedSquare: null,
-          gameOver: false,
-          winner: null
+          selectedRow: null,
+          selectedCol: null,
+          moves: 0
         };
       }
 
@@ -563,26 +568,46 @@
             cell.style.alignItems = 'center';
             cell.style.justifyContent = 'center';
             cell.style.background = (row + col) % 2 === 0 ? '#f0d9b5' : '#b58863';
-            cell.style.cursor = gameState.gameOver ? 'default' : 'pointer';
+            cell.style.cursor = 'pointer';
             cell.style.fontSize = '24px';
+            cell.style.transition = 'all 0.2s';
             cell.textContent = gameState.board[row][col] || '';
 
-            if (gameState.selectedSquare === row * 8 + col) {
+            if (gameState.selectedRow === row && gameState.selectedCol === col) {
               cell.style.background = '#baca44';
+              cell.style.boxShadow = 'inset 0 0 10px rgba(186, 202, 68, 0.5)';
             }
 
-            cell.onclick = () => selectSquare(row, col);
+            cell.onmouseover = () => { cell.style.opacity = '0.8'; };
+            cell.onmouseout = () => { cell.style.opacity = '1'; };
+            cell.onclick = () => moveChess(row, col);
             board.appendChild(cell);
           }
         }
       }
 
-      function selectSquare(row, col) {
-        if (gameState.gameOver) return;
-        if (gameState.selectedSquare === null) {
-          gameState.selectedSquare = row * 8 + col;
+      function moveChess(row, col) {
+        if (gameState.selectedRow === null) {
+          if (gameState.board[row][col]) {
+            gameState.selectedRow = row;
+            gameState.selectedCol = col;
+          }
         } else {
-          gameState.selectedSquare = null;
+          if (gameState.selectedRow === row && gameState.selectedCol === col) {
+            gameState.selectedRow = null;
+            gameState.selectedCol = null;
+          } else {
+            gameState.board[row][col] = gameState.board[gameState.selectedRow][gameState.selectedCol];
+            gameState.board[gameState.selectedRow][gameState.selectedCol] = null;
+            gameState.selectedRow = null;
+            gameState.selectedCol = null;
+            gameState.moves++;
+            if (gameState.moves >= 10) {
+              resultDiv.innerHTML = '<strong style="color: green;">🎉 Хорошо сыграли! +5 монет</strong>';
+              gameEngine.award(5, 4);
+              gameState.moves = 0;
+            }
+          }
         }
         renderBoard();
       }
@@ -617,6 +642,12 @@
       btnNew.textContent = 'Новая игра';
       controls.appendChild(btnNew);
 
+      const infoDiv = document.createElement('div');
+      infoDiv.style.fontSize = '12px';
+      infoDiv.style.color = '#666';
+      infoDiv.textContent = 'Кликните на шашку, потом на клетку (по диагонали или на 2 клетки)';
+      controls.appendChild(infoDiv);
+
       const resultDiv = document.createElement('div');
       resultDiv.style.textAlign = 'center';
       resultDiv.style.marginBottom = '15px';
@@ -631,7 +662,7 @@
       board.style.gap = '1px';
       board.style.background = '#999';
       board.style.padding = '5px';
-      board.style.margin = '0 auto';
+      board.style.margin = '10px auto';
       board.style.borderRadius = '5px';
       body.appendChild(board);
 
@@ -649,7 +680,7 @@
             if ((r + c) % 2 === 1) b[r][c] = '⚪';
           }
         }
-        return { board: b, selectedSquare: null, gameOver: false };
+        return { board: b, selectedRow: null, selectedCol: null, moves: 0 };
       }
 
       function renderBoard() {
@@ -663,26 +694,51 @@
             cell.style.alignItems = 'center';
             cell.style.justifyContent = 'center';
             cell.style.background = (row + col) % 2 === 0 ? '#e0e0e0' : '#333';
-            cell.style.cursor = gameState.gameOver ? 'default' : 'pointer';
+            cell.style.cursor = 'pointer';
             cell.style.fontSize = '24px';
+            cell.style.transition = 'all 0.2s';
             cell.textContent = gameState.board[row][col] || '';
 
-            if (gameState.selectedSquare === row * 8 + col) {
+            if (gameState.selectedRow === row && gameState.selectedCol === col) {
               cell.style.background = '#FFD700';
+              cell.style.boxShadow = 'inset 0 0 10px rgba(255, 215, 0, 0.5)';
             }
 
-            cell.onclick = () => selectSquare(row, col);
+            cell.onmouseover = () => { cell.style.opacity = '0.8'; };
+            cell.onmouseout = () => { cell.style.opacity = '1'; };
+            cell.onclick = () => moveCheckers(row, col);
             board.appendChild(cell);
           }
         }
       }
 
-      function selectSquare(row, col) {
-        if (gameState.gameOver) return;
-        if (gameState.selectedSquare === null) {
-          gameState.selectedSquare = row * 8 + col;
+      function moveCheckers(row, col) {
+        if (gameState.selectedRow === null) {
+          if (gameState.board[row][col]) {
+            gameState.selectedRow = row;
+            gameState.selectedCol = col;
+          }
         } else {
-          gameState.selectedSquare = null;
+          const dRow = Math.abs(row - gameState.selectedRow);
+          const dCol = Math.abs(col - gameState.selectedCol);
+          
+          if ((dRow === 1 && dCol === 1 && !gameState.board[row][col]) || 
+              (dRow === 2 && dCol === 2 && !gameState.board[row][col])) {
+            gameState.board[row][col] = gameState.board[gameState.selectedRow][gameState.selectedCol];
+            gameState.board[gameState.selectedRow][gameState.selectedCol] = null;
+            gameState.selectedRow = null;
+            gameState.selectedCol = null;
+            gameState.moves++;
+            
+            if (gameState.moves >= 8) {
+              resultDiv.innerHTML = '<strong style="color: green;">🎉 Отличный ход! +8 монет</strong>';
+              gameEngine.award(8, 6);
+              gameState.moves = 0;
+            }
+          } else {
+            gameState.selectedRow = null;
+            gameState.selectedCol = null;
+          }
         }
         renderBoard();
       }
