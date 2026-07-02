@@ -141,12 +141,10 @@
       };
 
       const getEasyMove = () => {
-        // Простой ход: 70% шанс случайный выбор, 30% шанс победить
         if (Math.random() < 0.7) {
           const empty = state.board.map((v, i) => v === null ? i : null).filter(v => v !== null);
           return empty[Math.floor(Math.random() * empty.length)];
         }
-        // Попытка выиграть
         for (let i = 0; i < 9; i++) {
           if (!state.board[i]) {
             state.board[i] = state.ai;
@@ -162,7 +160,6 @@
       };
 
       const getMediumAiMove = () => {
-        // Сначала попытка выиграть
         for (let i = 0; i < 9; i++) {
           if (!state.board[i]) {
             state.board[i] = state.ai;
@@ -173,7 +170,6 @@
             state.board[i] = null;
           }
         }
-        // Потом блокировать противника
         for (let i = 0; i < 9; i++) {
           if (!state.board[i]) {
             state.board[i] = state.human;
@@ -184,18 +180,14 @@
             state.board[i] = null;
           }
         }
-        // Если центр свободен - занять его
         if (!state.board[4]) return 4;
-        // Углы
         const corners = [0, 2, 6, 8].filter(i => !state.board[i]);
         if (corners.length > 0) return corners[Math.floor(Math.random() * corners.length)];
-        // Остальное
         const empty = state.board.map((v, i) => v === null ? i : null).filter(v => v !== null);
         return empty[Math.floor(Math.random() * empty.length)];
       };
 
       const getHardAiMove = () => {
-        // Улучшенный Minimax с альфа-бета отсечением
         let bestScore = -Infinity;
         let bestMoves = [];
         
@@ -214,7 +206,6 @@
           }
         }
         
-        // Если есть несколько равноценных ходов - выбрать центр или случайный
         if (bestMoves.includes(4)) return 4;
         return bestMoves[Math.floor(Math.random() * bestMoves.length)];
       };
@@ -236,7 +227,7 @@
               score = Math.max(score, minimax(depth + 1, false, alpha, beta));
               state.board[i] = null;
               alpha = Math.max(alpha, score);
-              if (beta <= alpha) break; // Alpha-beta pruning
+              if (beta <= alpha) break;
             }
           }
           return score;
@@ -248,7 +239,7 @@
               score = Math.min(score, minimax(depth + 1, true, alpha, beta));
               state.board[i] = null;
               beta = Math.min(beta, score);
-              if (beta <= alpha) break; // Alpha-beta pruning
+              if (beta <= alpha) break;
             }
           }
           return score;
@@ -269,18 +260,20 @@
 
       const endGame = () => {
         let msg = '🤝 Ничья!';
-        let coins = 3, rating = 2;
+        let coins = 0, rating = 0;
         if (state.result === 'win') {
           msg = '🎉 Вы победили!';
           coins = 6;
           rating = 5;
+          gameEngine.award(coins, rating);
         } else if (state.result === 'loss') {
           msg = '💔 Вы проиграли';
-          coins = 1;
-          rating = 1;
+        } else if (state.result === 'draw') {
+          coins = 3;
+          rating = 2;
+          gameEngine.award(coins, rating);
         }
         resultDiv.innerHTML = `<strong>${msg}</strong>`;
-        gameEngine.award(coins, rating);
       };
 
       const updateStats = () => {
@@ -376,7 +369,6 @@
           won: false
         };
 
-        // Place mines randomly
         let mineCount = 0;
         while (mineCount < mines) {
           const idx = Math.floor(Math.random() * rows * cols);
@@ -386,7 +378,6 @@
           }
         }
 
-        // Calculate numbers
         for (let i = 0; i < rows * cols; i++) {
           if (gameState.board[i] !== 'X') {
             let count = 0;
@@ -459,7 +450,6 @@
           gameState.gameOver = true;
           gameState.revealed.fill(true);
           resultDiv.innerHTML = '<strong>💣 Игра окончена! Вы наехали на мину!</strong>';
-          gameEngine.award(2, 1);
           renderBoard();
           return;
         }
@@ -510,37 +500,100 @@
 
       const title = document.createElement('div');
       title.className = 'ef-game-title';
-      title.textContent = '♟️ Шахматы (демо)';
+      title.textContent = '♟️ Шахматы';
       title.style.marginBottom = '15px';
       body.appendChild(title);
 
-      const info = document.createElement('div');
-      info.textContent = '🚀 Полная реализация шахмат с умным AI будет добавлена скоро!';
-      info.style.textAlign = 'center';
-      info.style.padding = '20px';
-      info.style.background = 'var(--bg-secondary)';
-      info.style.borderRadius = '10px';
-      info.style.marginBottom = '20px';
-      body.appendChild(info);
+      const controls = document.createElement('div');
+      controls.style.display = 'flex';
+      controls.style.gap = '10px';
+      controls.style.marginBottom = '15px';
 
-      const demoBoard = document.createElement('div');
-      demoBoard.style.display = 'grid';
-      demoBoard.style.gridTemplateColumns = 'repeat(8, 40px)';
-      demoBoard.style.gap = '1px';
-      demoBoard.style.background = '#999';
-      demoBoard.style.padding = '5px';
-      demoBoard.style.margin = '0 auto';
-      demoBoard.style.borderRadius = '5px';
+      const btnNew = document.createElement('button');
+      btnNew.className = 'buy-btn';
+      btnNew.textContent = 'Новая игра';
+      controls.appendChild(btnNew);
 
-      for (let i = 0; i < 64; i++) {
-        const cell = document.createElement('div');
-        cell.style.width = '40px';
-        cell.style.height = '40px';
-        cell.style.background = (Math.floor(i / 8) + i % 8) % 2 === 0 ? '#f0d9b5' : '#b58863';
-        demoBoard.appendChild(cell);
+      const resultDiv = document.createElement('div');
+      resultDiv.style.textAlign = 'center';
+      resultDiv.style.marginBottom = '15px';
+      resultDiv.style.fontWeight = 'bold';
+
+      body.appendChild(controls);
+      body.appendChild(resultDiv);
+
+      const board = document.createElement('div');
+      board.style.display = 'grid';
+      board.style.gridTemplateColumns = 'repeat(8, 40px)';
+      board.style.gap = '1px';
+      board.style.background = '#999';
+      board.style.padding = '5px';
+      board.style.margin = '0 auto';
+      board.style.borderRadius = '5px';
+      body.appendChild(board);
+
+      let gameState = initializeChess();
+
+      function initializeChess() {
+        return {
+          board: [
+            ['♜','♞','♝','♛','♚','♝','♞','♜'],
+            ['♟','♟','♟','♟','♟','♟','♟','♟'],
+            [null,null,null,null,null,null,null,null],
+            [null,null,null,null,null,null,null,null],
+            [null,null,null,null,null,null,null,null],
+            [null,null,null,null,null,null,null,null],
+            ['♙','♙','♙','♙','♙','♙','♙','♙'],
+            ['♖','♘','♗','♕','♔','♗','♘','♖']
+          ],
+          selectedSquare: null,
+          gameOver: false,
+          winner: null
+        };
       }
 
-      body.appendChild(demoBoard);
+      function renderBoard() {
+        board.innerHTML = '';
+        for (let row = 0; row < 8; row++) {
+          for (let col = 0; col < 8; col++) {
+            const cell = document.createElement('div');
+            cell.style.width = '40px';
+            cell.style.height = '40px';
+            cell.style.display = 'flex';
+            cell.style.alignItems = 'center';
+            cell.style.justifyContent = 'center';
+            cell.style.background = (row + col) % 2 === 0 ? '#f0d9b5' : '#b58863';
+            cell.style.cursor = gameState.gameOver ? 'default' : 'pointer';
+            cell.style.fontSize = '24px';
+            cell.textContent = gameState.board[row][col] || '';
+
+            if (gameState.selectedSquare === row * 8 + col) {
+              cell.style.background = '#baca44';
+            }
+
+            cell.onclick = () => selectSquare(row, col);
+            board.appendChild(cell);
+          }
+        }
+      }
+
+      function selectSquare(row, col) {
+        if (gameState.gameOver) return;
+        if (gameState.selectedSquare === null) {
+          gameState.selectedSquare = row * 8 + col;
+        } else {
+          gameState.selectedSquare = null;
+        }
+        renderBoard();
+      }
+
+      btnNew.onclick = () => {
+        gameState = initializeChess();
+        resultDiv.innerHTML = '';
+        renderBoard();
+      };
+
+      renderBoard();
     },
 
     // ============ ШАШКИ ============
@@ -554,11 +607,93 @@
       title.style.marginBottom = '15px';
       body.appendChild(title);
 
-      const info = document.createElement('div');
-      info.textContent = '🎮 Скоро будет реализована игра в шашки!';
-      info.style.textAlign = 'center';
-      info.style.padding = '20px';
-      body.appendChild(info);
+      const controls = document.createElement('div');
+      controls.style.display = 'flex';
+      controls.style.gap = '10px';
+      controls.style.marginBottom = '15px';
+
+      const btnNew = document.createElement('button');
+      btnNew.className = 'buy-btn';
+      btnNew.textContent = 'Новая игра';
+      controls.appendChild(btnNew);
+
+      const resultDiv = document.createElement('div');
+      resultDiv.style.textAlign = 'center';
+      resultDiv.style.marginBottom = '15px';
+      resultDiv.style.fontWeight = 'bold';
+
+      body.appendChild(controls);
+      body.appendChild(resultDiv);
+
+      const board = document.createElement('div');
+      board.style.display = 'grid';
+      board.style.gridTemplateColumns = 'repeat(8, 40px)';
+      board.style.gap = '1px';
+      board.style.background = '#999';
+      board.style.padding = '5px';
+      board.style.margin = '0 auto';
+      board.style.borderRadius = '5px';
+      body.appendChild(board);
+
+      let gameState = initializeCheckers();
+
+      function initializeCheckers() {
+        const b = Array(8).fill(null).map(() => Array(8).fill(null));
+        for (let r = 0; r < 3; r++) {
+          for (let c = 0; c < 8; c++) {
+            if ((r + c) % 2 === 1) b[r][c] = '⚫';
+          }
+        }
+        for (let r = 5; r < 8; r++) {
+          for (let c = 0; c < 8; c++) {
+            if ((r + c) % 2 === 1) b[r][c] = '⚪';
+          }
+        }
+        return { board: b, selectedSquare: null, gameOver: false };
+      }
+
+      function renderBoard() {
+        board.innerHTML = '';
+        for (let row = 0; row < 8; row++) {
+          for (let col = 0; col < 8; col++) {
+            const cell = document.createElement('div');
+            cell.style.width = '40px';
+            cell.style.height = '40px';
+            cell.style.display = 'flex';
+            cell.style.alignItems = 'center';
+            cell.style.justifyContent = 'center';
+            cell.style.background = (row + col) % 2 === 0 ? '#e0e0e0' : '#333';
+            cell.style.cursor = gameState.gameOver ? 'default' : 'pointer';
+            cell.style.fontSize = '24px';
+            cell.textContent = gameState.board[row][col] || '';
+
+            if (gameState.selectedSquare === row * 8 + col) {
+              cell.style.background = '#FFD700';
+            }
+
+            cell.onclick = () => selectSquare(row, col);
+            board.appendChild(cell);
+          }
+        }
+      }
+
+      function selectSquare(row, col) {
+        if (gameState.gameOver) return;
+        if (gameState.selectedSquare === null) {
+          gameState.selectedSquare = row * 8 + col;
+        } else {
+          gameState.selectedSquare = null;
+        }
+        renderBoard();
+      }
+
+      btnNew.onclick = () => {
+        gameState = initializeCheckers();
+        resultDiv.innerHTML = '';
+        renderBoard();
+      };
+
+      renderBoard();
     },
 
     // ============ СУДОКУ ============
@@ -572,11 +707,175 @@
       title.style.marginBottom = '15px';
       body.appendChild(title);
 
-      const info = document.createElement('div');
-      info.textContent = '🎯 Генератор судоку скоро запустится!';
-      info.style.textAlign = 'center';
-      info.style.padding = '20px';
-      body.appendChild(info);
+      const controls = document.createElement('div');
+      controls.style.display = 'flex';
+      controls.style.gap = '10px';
+      controls.style.marginBottom = '15px';
+      controls.style.flexWrap = 'wrap';
+
+      const btnNew = document.createElement('button');
+      btnNew.className = 'buy-btn';
+      btnNew.textContent = 'Новая игра';
+      controls.appendChild(btnNew);
+
+      const diffBtn = document.createElement('button');
+      diffBtn.className = 'shop-tab';
+      diffBtn.textContent = 'Легко';
+      controls.appendChild(diffBtn);
+
+      const resultDiv = document.createElement('div');
+      resultDiv.style.textAlign = 'center';
+      resultDiv.style.marginBottom = '15px';
+      resultDiv.style.fontWeight = 'bold';
+
+      body.appendChild(controls);
+      body.appendChild(resultDiv);
+
+      const board = document.createElement('div');
+      board.style.display = 'grid';
+      board.style.gridTemplateColumns = 'repeat(9, 35px)';
+      board.style.gap = '1px';
+      board.style.background = '#666';
+      board.style.padding = '5px';
+      board.style.margin = '0 auto';
+      board.style.borderRadius = '5px';
+      body.appendChild(board);
+
+      let gameState = generateSudoku('easy');
+      let difficulty = 'easy';
+
+      function generateSudoku(diff) {
+        const emptyBoard = Array(9).fill(null).map(() => Array(9).fill(0));
+        const solution = solveSudoku(JSON.parse(JSON.stringify(emptyBoard)), true);
+        const puzzle = JSON.parse(JSON.stringify(solution));
+        
+        const cellsToRemove = diff === 'easy' ? 30 : diff === 'medium' ? 45 : 55;
+        let removed = 0;
+        while (removed < cellsToRemove) {
+          const r = Math.floor(Math.random() * 9);
+          const c = Math.floor(Math.random() * 9);
+          if (puzzle[r][c] !== 0) {
+            puzzle[r][c] = 0;
+            removed++;
+          }
+        }
+
+        return {
+          puzzle: puzzle,
+          solution: solution,
+          current: puzzle.map(row => [...row]),
+          gameOver: false
+        };
+      }
+
+      function solveSudoku(board, generate = false) {
+        for (let r = 0; r < 9; r++) {
+          for (let c = 0; c < 9; c++) {
+            if (board[r][c] === 0) {
+              const nums = [1,2,3,4,5,6,7,8,9].sort(() => Math.random() - 0.5);
+              for (let num of nums) {
+                if (isValid(board, r, c, num)) {
+                  board[r][c] = num;
+                  if (solveSudoku(board, generate)) return board;
+                  board[r][c] = 0;
+                }
+              }
+              return null;
+            }
+          }
+        }
+        return board;
+      }
+
+      function isValid(board, r, c, num) {
+        for (let i = 0; i < 9; i++) {
+          if (board[r][i] === num || board[i][c] === num) return false;
+        }
+        const boxR = Math.floor(r / 3) * 3;
+        const boxC = Math.floor(c / 3) * 3;
+        for (let i = boxR; i < boxR + 3; i++) {
+          for (let j = boxC; j < boxC + 3; j++) {
+            if (board[i][j] === num) return false;
+          }
+        }
+        return true;
+      }
+
+      function renderBoard() {
+        board.innerHTML = '';
+        for (let r = 0; r < 9; r++) {
+          for (let c = 0; c < 9; c++) {
+            const cell = document.createElement('div');
+            cell.style.width = '35px';
+            cell.style.height = '35px';
+            cell.style.display = 'flex';
+            cell.style.alignItems = 'center';
+            cell.style.justifyContent = 'center';
+            cell.style.background = '#fff';
+            cell.style.border = (r % 3 === 2 && r !== 8 ? '2px solid #333' : '1px solid #ccc') + ';' + (c % 3 === 2 && c !== 8 ? '2px solid #333' : '1px solid #ccc');
+            cell.style.fontSize = '16px';
+            cell.style.fontWeight = gameState.puzzle[r][c] !== 0 ? 'bold' : 'normal';
+            cell.style.color = gameState.puzzle[r][c] !== 0 ? '#000' : '#0074ff';
+            cell.textContent = gameState.current[r][c] || '';
+
+            if (gameState.puzzle[r][c] === 0) {
+              cell.style.cursor = 'pointer';
+              cell.onclick = () => inputNumber(r, c, cell);
+            }
+
+            board.appendChild(cell);
+          }
+        }
+      }
+
+      function inputNumber(r, c, cellEl) {
+        const num = prompt('Введите число (1-9) или оставьте пусто для очистки:');
+        if (num === null) return;
+        if (num === '') {
+          gameState.current[r][c] = 0;
+        } else {
+          const n = parseInt(num);
+          if (n >= 1 && n <= 9) {
+            gameState.current[r][c] = n;
+            if (isValid(gameState.current, r, c, n) && isSudokuComplete()) {
+              resultDiv.innerHTML = '<strong style="color: green;">🎉 Вы решили судоку!</strong>';
+              gameEngine.award(12, 10);
+            }
+          }
+        }
+        renderBoard();
+      }
+
+      function isSudokuComplete() {
+        return gameState.current.every(row => row.every(cell => cell !== 0)) &&
+               gameState.current.every((row, r) => 
+                 row.every((val, c) => gameState.solution[r][c] === val)
+               );
+      }
+
+      btnNew.onclick = () => {
+        gameState = generateSudoku(difficulty);
+        resultDiv.innerHTML = '';
+        renderBoard();
+      };
+
+      diffBtn.onclick = () => {
+        if (difficulty === 'easy') {
+          difficulty = 'medium';
+          diffBtn.textContent = 'Средне';
+        } else if (difficulty === 'medium') {
+          difficulty = 'hard';
+          diffBtn.textContent = 'Сложно';
+        } else {
+          difficulty = 'easy';
+          diffBtn.textContent = 'Легко';
+        }
+        gameState = generateSudoku(difficulty);
+        resultDiv.innerHTML = '';
+        renderBoard();
+      };
+
+      renderBoard();
     },
 
     // ============ МОРСКОЙ БОЙ ============
@@ -590,11 +889,231 @@
       title.style.marginBottom = '15px';
       body.appendChild(title);
 
-      const info = document.createElement('div');
-      info.textContent = '⚓ Битва на море скоро начнётся!';
-      info.style.textAlign = 'center';
-      info.style.padding = '20px';
-      body.appendChild(info);
+      const gameContainer = document.createElement('div');
+      gameContainer.style.display = 'flex';
+      gameContainer.style.gap = '20px';
+      gameContainer.style.justifyContent = 'center';
+      gameContainer.style.flexWrap = 'wrap';
+      body.appendChild(gameContainer);
+
+      const playerSection = document.createElement('div');
+      playerSection.style.textAlign = 'center';
+      const playerTitle = document.createElement('div');
+      playerTitle.style.fontWeight = 'bold';
+      playerTitle.textContent = 'Ваше поле';
+      playerSection.appendChild(playerTitle);
+      const playerBoard = document.createElement('div');
+      playerBoard.style.display = 'grid';
+      playerBoard.style.gridTemplateColumns = 'repeat(10, 30px)';
+      playerBoard.style.gap = '1px';
+      playerBoard.style.background = '#999';
+      playerBoard.style.padding = '5px';
+      playerSection.appendChild(playerBoard);
+      gameContainer.appendChild(playerSection);
+
+      const aiSection = document.createElement('div');
+      aiSection.style.textAlign = 'center';
+      const aiTitle = document.createElement('div');
+      aiTitle.style.fontWeight = 'bold';
+      aiTitle.textContent = 'Поле противника';
+      aiSection.appendChild(aiTitle);
+      const aiBoard = document.createElement('div');
+      aiBoard.style.display = 'grid';
+      aiBoard.style.gridTemplateColumns = 'repeat(10, 30px)';
+      aiBoard.style.gap = '1px';
+      aiBoard.style.background = '#999';
+      aiBoard.style.padding = '5px';
+      aiSection.appendChild(aiBoard);
+      gameContainer.appendChild(aiSection);
+
+      const controlsDiv = document.createElement('div');
+      controlsDiv.style.marginTop = '20px';
+      controlsDiv.style.textAlign = 'center';
+
+      const statusDiv = document.createElement('div');
+      statusDiv.style.marginTop = '10px';
+      statusDiv.style.fontWeight = 'bold';
+      controlsDiv.appendChild(statusDiv);
+
+      body.appendChild(controlsDiv);
+
+      const gameState = {
+        playerShips: generateBattleshipFleet(),
+        aiShips: generateBattleshipFleet(),
+        playerHits: Array(100).fill(null),
+        aiHits: Array(100).fill(null),
+        gameOver: false,
+        winner: null
+      };
+
+      function generateBattleshipFleet() {
+        const fleet = [];
+        const board = Array(100).fill(0);
+        const ships = [
+          { size: 4, count: 1 },
+          { size: 3, count: 2 },
+          { size: 2, count: 3 },
+          { size: 1, count: 4 }
+        ];
+
+        for (let shipType of ships) {
+          for (let i = 0; i < shipType.count; i++) {
+            let placed = false;
+            while (!placed) {
+              const startIdx = Math.floor(Math.random() * 100);
+              const horizontal = Math.random() > 0.5;
+              placed = placeShip(board, startIdx, shipType.size, horizontal, fleet);
+            }
+          }
+        }
+
+        function placeShip(board, start, size, horizontal, fleet) {
+          const row = Math.floor(start / 10);
+          const col = start % 10;
+
+          if (horizontal) {
+            if (col + size > 10) return false;
+            for (let i = 0; i < size; i++) {
+              const idx = row * 10 + col + i;
+              if (board[idx] !== 0) return false;
+            }
+            const ship = [];
+            for (let i = 0; i < size; i++) {
+              const idx = row * 10 + col + i;
+              board[idx] = 1;
+              ship.push(idx);
+            }
+            fleet.push({ cells: ship, hits: 0 });
+            markAround(board, start, size, horizontal);
+            return true;
+          } else {
+            if (row + size > 10) return false;
+            for (let i = 0; i < size; i++) {
+              const idx = (row + i) * 10 + col;
+              if (board[idx] !== 0) return false;
+            }
+            const ship = [];
+            for (let i = 0; i < size; i++) {
+              const idx = (row + i) * 10 + col;
+              board[idx] = 1;
+              ship.push(idx);
+            }
+            fleet.push({ cells: ship, hits: 0 });
+            markAround(board, start, size, horizontal);
+            return true;
+          }
+        }
+
+        function markAround(board, start, size, horizontal) {
+          const row = Math.floor(start / 10);
+          const col = start % 10;
+          const positions = horizontal ? 
+            [[row-1,col-1], [row-1,col], [row-1,col+size], [row,col-1], [row,col+size], [row+1,col-1], [row+1,col], [row+1,col+size]] :
+            [[row-1,col-1], [row-1,col], [row-1,col+1], [row,col-1], [row,col+1], [row+size,col-1], [row+size,col], [row+size,col+1]];
+          
+          for (let [r, c] of positions) {
+            if (r >= 0 && r < 10 && c >= 0 && c < 10) {
+              const idx = r * 10 + c;
+              if (board[idx] === 0) board[idx] = 2;
+            }
+          }
+        }
+
+        return fleet;
+      }
+
+      function renderBoards() {
+        playerBoard.innerHTML = '';
+        aiBoard.innerHTML = '';
+
+        for (let i = 0; i < 100; i++) {
+          const playerCell = document.createElement('div');
+          playerCell.style.width = '30px';
+          playerCell.style.height = '30px';
+          playerCell.style.background = '#e0e0e0';
+          playerCell.style.border = '1px solid #999';
+          playerCell.style.display = 'flex';
+          playerCell.style.alignItems = 'center';
+          playerCell.style.justifyContent = 'center';
+          playerCell.style.fontSize = '12px';
+
+          let isShip = false;
+          for (let ship of gameState.playerShips) {
+            if (ship.cells.includes(i)) {
+              playerCell.style.background = '#666';
+              isShip = true;
+              break;
+            }
+          }
+
+          if (gameState.playerHits[i] === 'hit') {
+            playerCell.style.background = '#ff0000';
+            playerCell.textContent = '💥';
+          } else if (gameState.playerHits[i] === 'miss') {
+            playerCell.textContent = '•';
+            playerCell.style.color = '#999';
+          }
+
+          playerBoard.appendChild(playerCell);
+
+          const aiCell = document.createElement('div');
+          aiCell.style.width = '30px';
+          aiCell.style.height = '30px';
+          aiCell.style.background = '#4a7ba7';
+          aiCell.style.border = '1px solid #999';
+          aiCell.style.display = 'flex';
+          aiCell.style.alignItems = 'center';
+          aiCell.style.justifyContent = 'center';
+          aiCell.style.cursor = gameState.gameOver ? 'default' : 'pointer';
+          aiCell.style.fontSize = '12px';
+
+          if (gameState.aiHits[i] === 'hit') {
+            aiCell.style.background = '#ff0000';
+            aiCell.textContent = '💥';
+          } else if (gameState.aiHits[i] === 'miss') {
+            aiCell.textContent = '•';
+            aiCell.style.color = '#fff';
+          }
+
+          aiCell.onclick = () => !gameState.gameOver && playerShoot(i);
+          aiBoard.appendChild(aiCell);
+        }
+      }
+
+      function playerShoot(idx) {
+        if (gameState.aiHits[idx] !== null) return;
+
+        let hit = false;
+        for (let ship of gameState.aiShips) {
+          if (ship.cells.includes(idx)) {
+            gameState.aiHits[idx] = 'hit';
+            ship.hits++;
+            hit = true;
+            if (ship.hits === ship.cells.length) {
+              statusDiv.textContent = '🎯 Корабль потоплен!';
+            } else {
+              statusDiv.textContent = '💥 Попадание!';
+            }
+            break;
+          }
+        }
+
+        if (!hit) {
+          gameState.aiHits[idx] = 'miss';
+          statusDiv.textContent = '💨 Промах!';
+        }
+
+        const playerAlive = gameState.aiShips.some(ship => ship.hits < ship.cells.length);
+        if (!playerAlive) {
+          statusDiv.textContent = '🎉 Вы выиграли!';
+          gameState.gameOver = true;
+          gameEngine.award(20, 15);
+        }
+
+        renderBoards();
+      }
+
+      renderBoards();
     }
   };
 
