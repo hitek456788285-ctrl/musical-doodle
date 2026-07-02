@@ -108,6 +108,118 @@
   background:#fde68a;
 }
 
+/* Chess styles */
+.chess-board {
+  display:grid;
+  grid-template-columns:repeat(8, 40px);
+  gap:1px;
+  background:#999;
+  padding:5px;
+  margin:12px auto;
+  border-radius:5px;
+  width:fit-content;
+}
+
+.chess-cell {
+  width:40px;
+  height:40px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:28px;
+  cursor:pointer;
+  transition:all .2s;
+}
+
+.chess-cell:hover {
+  transform:scale(1.05);
+  box-shadow:inset 0 0 8px rgba(0,0,0,.2);
+}
+
+.chess-cell.selected {
+  background:#FFD700 !important;
+  box-shadow:inset 0 0 10px rgba(255,215,0,.5);
+}
+
+/* Checkers styles */
+.checkers-board {
+  display:grid;
+  grid-template-columns:repeat(8, 40px);
+  gap:1px;
+  background:#999;
+  padding:5px;
+  margin:12px auto;
+  border-radius:5px;
+  width:fit-content;
+}
+
+.checkers-cell {
+  width:40px;
+  height:40px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:26px;
+  cursor:pointer;
+  transition:all .2s;
+}
+
+.checkers-cell:hover {
+  transform:scale(1.05);
+}
+
+.checkers-cell.selected {
+  background:#FFD700 !important;
+  box-shadow:inset 0 0 10px rgba(255,215,0,.5);
+}
+
+/* Sudoku styles */
+.sudoku-board {
+  display:grid;
+  grid-template-columns:repeat(9, 35px);
+  gap:1px;
+  background:#666;
+  padding:5px;
+  margin:12px auto;
+  border-radius:5px;
+  width:fit-content;
+}
+
+.sudoku-cell {
+  width:35px;
+  height:35px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:16px;
+  cursor:pointer;
+  background:#fff;
+  border:1px solid #ccc;
+  transition:all .2s;
+  font-weight:normal;
+  color:#0074ff;
+}
+
+.sudoku-cell:hover {
+  background:#f5f5f5;
+  transform:scale(1.05);
+}
+
+.sudoku-cell.given {
+  font-weight:bold;
+  color:#000;
+  background:#f9f9f9;
+  cursor:default;
+}
+
+.sudoku-cell.box-border-bottom {
+  border-bottom:2px solid #333;
+}
+
+.sudoku-cell.box-border-right {
+  border-right:2px solid #333;
+}
+
 /* Modal wrapper used by games script */
 .ef-game-modal { 
   position:fixed; 
@@ -251,11 +363,27 @@
     height:32px;
     font-size:14px;
   }
+  
+  .chess-cell,
+  .checkers-cell {
+    width:32px;
+    height:32px;
+    font-size:20px;
+  }
+  
+  .sudoku-cell {
+    width:30px;
+    height:30px;
+    font-size:14px;
+  }
 }
 
 /* Dark theme adjustments */
 body.dark-theme .t3-board,
-body.dark-theme .ms-board {
+body.dark-theme .ms-board,
+body.dark-theme .chess-board,
+body.dark-theme .checkers-board,
+body.dark-theme .sudoku-board {
   background:var(--bg-secondary);
 }
 
@@ -274,6 +402,16 @@ body.dark-theme .ms-cell {
 body.dark-theme .ms-cell.revealed {
   background:var(--bg-primary);
   border-color:var(--border-color);
+}
+
+body.dark-theme .sudoku-cell {
+  background:var(--bg-secondary);
+  border-color:var(--border-color);
+  color:#667eea;
+}
+
+body.dark-theme .sudoku-cell.given {
+  color:var(--text-primary);
 }
 
 body.dark-theme .ef-game-panel {
